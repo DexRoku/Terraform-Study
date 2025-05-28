@@ -1,7 +1,7 @@
 provider "aws" {
     region = "us-east-1"
     access_key = ""
-    secret_key = ""
+    secret_key = "+"
 }
 
 
@@ -30,23 +30,6 @@ resource "aws_vpc" "terraform-study-vpc-2" {
     }
 }
 
-resource "aws_subnet" "subnet-1" {
-    vpc_id = aws_vpc.terraform-study-vpc.id
-    cidr_block = "10.0.0.0/24"
-
-    tags = {
-        Name = "prod-subnet-1"
-    }
-}
-
-resource "aws_subnet" "subnet-2" {
-    vpc_id = aws_vpc.terraform-study-vpc-2.id
-    cidr_block = "10.0.0.0/24"
-
-    tags = {
-        Name = "prod-subnet-2"
-    }
-}
 
 resource "aws_key_pair" "terraform-study-key" {
   key_name   = "terraform-study-key"
@@ -55,7 +38,7 @@ resource "aws_key_pair" "terraform-study-key" {
 
 
 
-# create a vpc_id
+# 1. create a vpc_id
 
 resource "aws_vpc" "prod_vpc" {
   cidr_block = "10.0.0.0/16"
@@ -65,7 +48,7 @@ resource "aws_vpc" "prod_vpc" {
   }
 }
 
-# create Internet Gateway
+# 2. create Internet Gateway
 resource "aws_internet_gateway" "prod_gateway" {
   vpc_id = aws_vpc.prod_vpc.id
 
@@ -74,7 +57,7 @@ resource "aws_internet_gateway" "prod_gateway" {
   }
 }
 
-# create a route table
+# 3. create a route table
 resource "aws_route_table" "prod_route_table" {
   vpc_id = aws_vpc.prod_vpc.id
 
@@ -90,3 +73,62 @@ resource "aws_route_table" "prod_route_table" {
   tags = {
     Name = "prod-route-table"
   }
+
+}
+# 4. Create a subnet
+resource "aws_subnet" "subnet-1" {
+  vpc_id     = aws_vpc.prod_vpc.id    # use prod_vpc here
+  cidr_block = "10.0.0.0/24"
+
+  tags = {
+    Name = "prod-subnet-1"
+  }
+}
+
+# 5. Associate the route table with the subnet
+resource "aws_route_table_association" "prod_route_table_association" {
+  subnet_id      = aws_subnet.subnet-1.id
+  route_table_id = aws_route_table.prod_route_table.id
+}
+
+# 6. Create a security group
+resource "aws_security_group" "prod_security_group" {
+  name        = "prod-security-group"
+  description = "Allow SSH and HTTP traffic"
+  vpc_id      = aws_vpc.prod_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# 9- Create an EC2 instance 
+resource "aws_instance" "prod_ec2_instance" {
+  ami           = "ami-084568db4383264d4"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.subnet-1.id
+  vpc_security_group_ids = [aws_security_group.prod_security_group.id]
+  key_name      = aws_key_pair.terraform-study-key.key_name
+
+  tags = {
+    Name = "prod-ec2-instance"
+  }
+
+    user_data = <<-EOF
+                #!/bin/bash
+                echo "Hello, World!" > /var/www/html/index.html
+                systemctl start httpd
+                systemctl enable httpd
+                EOF
+
+}
