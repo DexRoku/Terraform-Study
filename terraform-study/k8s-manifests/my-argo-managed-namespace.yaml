@@ -3,13 +3,18 @@ kind: Namespace
 metadata:
   name: my-argo-managed-namespace
   labels:
+    # You can keep this label if you want:
     name: my-argo-managed-namespace
-    argocd.argoproj.io/instance: "argocd"
-    argocd.argoproj.io/managed-by-application: "my-argo-managed-namespace"
-    argocd.argoproj.io/managed-by: "true"
-    argocd.argoproj.io/sync-options: "Prune=false"
-    argocd.argoproj.io/sync-wave: "0"
-    argocd.argoproj.io/sync-status: "Synced"
-    argocd.argoproj.io/sync-revision: "HEAD"
-    argocd.argoproj.io/sync-source: "https://github.com/DexRoku/Terraform-Study/tree/main/terraform-study/k8s-manifests"
-    argocd.argoproj.io/sync-target: "https://github.com/DexRoku/Terraform-Study/tree/main/terraform-study/k8s-manifests"
+  annotations:
+    # These annotations instruct Argo CD how to handle this resource
+    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/resource-ignore: |
+      jsonPointers:
+      - /metadata/labels/argocd.argoproj.io~1sync-options
+      - /metadata/labels/argocd.argoproj.io~1sync-source
+      - /metadata/labels/argocd.argoproj.io~1sync-target
+      - /metadata/labels/argocd.argoproj.io~1instance
+      - /metadata/labels/argocd.argoproj.io~1managed-by-application
+      - /metadata/labels/argocd.argoproj.io~1managed-by
+      - /metadata/labels/argocd.argoproj.io~1sync-revision
+      - /metadata/labels/argocd.argoproj.io~1sync-status
