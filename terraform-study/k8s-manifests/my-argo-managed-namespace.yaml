@@ -1,9 +1,11 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: argocd
+  name: my-argo-managed-namespace
   labels:
-    name: argocd
+    name: my-argo-managed-namespace
+    argocd.argoproj.io/instance: "argocd"
+    argocd.argoproj.io/managed-by-application: "my-argo-managed-namespace"
     argocd.argoproj.io/managed-by: "true"
     argocd.argoproj.io/sync-options: "Prune=false"
     argocd.argoproj.io/sync-wave: "0"
